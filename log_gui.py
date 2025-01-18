@@ -5,7 +5,7 @@ import csv
 import ao3_logger as ao3
 from io import StringIO
 import sys
-#need environment 310, and cd /d D:\Git_sz5120\Logger_dev
+#need environment 310, and cd /d D:\Git_sz5120\Logger_Dev0
 
 ##########################
 
@@ -116,7 +116,7 @@ def refresh_table():
     global data, total_words
     data=read_csv()
     update_table()
-    if len(data)>1: #only do this if there's something in it
+    if len(data)>0: #only do this if there's something in it
         recalculate_stats()
     
 
@@ -187,6 +187,14 @@ def clear_input_fields():
     author_input.value = title_input.value = wordcount_input.value = ""
     wordcount_input.value=fandom_input.value= rating_input.value =url_input.value=""
 
+def recalculate_stats():    
+    global total_words
+    if len(data)>0:
+        total_words=sum([int(ent["words"].replace(',','')) for ent in data])
+    total_words_label.text = f"Total words: {total_words}" 
+    print("recalculating stats")
+    update_textbox()
+    
 columns=[
     {"name": "date_fin", "label": "Date", "field": "date_fin"},
     #{"name": "status", "label": "Status", "field": "status"},
@@ -253,14 +261,6 @@ with ui.row():
     ).props('virtual-scroll')
     log_table.style("width: 1000px; height: 350px; overflow: auto; overflow-wrap: auto")
 
-def recalculate_stats():    
-    global total_words
-    if len(data)>1:
-        total_words=sum([int(ent["words"].replace(',','')) for ent in data])
-    total_words_label.text = f"Total words: {total_words}" 
-    print("recalculating stats")
-    update_textbox()
-    
 with ui.row():
     ui.button("Refresh Table", on_click=refresh_table)
     ui.button("Clear Table (not working)",on_click=clear_table)
