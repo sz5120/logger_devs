@@ -54,22 +54,38 @@ def get_tag_info(category, meta):
 		return []
 	return [unidecode(result.text) for result in tag_list] 
 
-
-def get_meta_info(fic_id,soup):
-    #will return a dictionary with author title word count tags date published(?)
-    # and from tags we want: fandom pairing characters
-    #tags = ['rating', 'category', 'fandom', 'relationship', 'character', 'freeform']
-    #categories = ['language', 'published', 'status', 'words', 'chapters', 'comments', 'kudos', 'bookmarks', 'hits'] 
-    
+def create_blank_dict():
     #categories of info we want
     work_id_names=['fic_id']
     headmeta_names=['author','title']
     stat_names=['words','published','status','chapters']
     tag_names=['rating','category','fandom','relationship','character','warning','freeform']
     url_names=['url']
+    date_names=['date_fin'] #by default this will be current date unless overwritten
+    #dictionary with categories as keys
+    meta_dict=dict.fromkeys(work_id_names+headmeta_names+stat_names+tag_names+url_names+date_names)
+    
+    return meta_dict
+    
+def get_meta_info(fic_id,soup,date=None):
+    #will return a dictionary with author title word count tags date published(?)
+    # and from tags we want: fandom pairing characters
+    #tags = ['rating', 'category', 'fandom', 'relationship', 'character', 'freeform']
+    #categories = ['language', 'published', 'status', 'words', 'chapters', 'comments', 'kudos', 'bookmarks', 'hits'] 
+    ''
+    #categories of info we want
+    #work_id_names=['fic_id']
+    #headmeta_names=['author','title']
+    stat_names=['words','published','status','chapters']
+    tag_names=['rating','category','fandom','relationship','character','warning','freeform']
+    #url_names=['url']
+    #date_names=['date'] #by default this will be current date unless overwritten
+    '''' this has now been moved to "create_blank_dict"
+    
     #dictionary with categories as keys
     meta_dict=dict.fromkeys(work_id_names,headmeta_names+stat_names+tag_names+url_names)
-
+'''
+    meta_dict=create_blank_dict()
     #get the work meta and the heading/preface meta from the soup
     meta = soup.find("dl", class_="work meta group")
     headmeta=soup.find("div",class_="preface group")
@@ -98,6 +114,8 @@ def get_meta_info(fic_id,soup):
         
     #include URL at end
     meta_dict['url']='http://archiveofourown.org/works/'+str(fic_id)
+    
+    meta_dict['date_fin']=date
     return meta_dict
 
 
@@ -123,8 +141,8 @@ def get_soup_ao3(fic_id):
 def scrape_from_ao3(fic_id):
     print('Scraping:', fic_id)
     global src_dict
-    if fic_id in src_dict:
-        src=src_dict[fic_id]
+    if str(fic_id) in src_dict:
+        src=src_dict[str(fic_id)]
         print("already scraped, moving on")
     else:
         src=get_soup_ao3(fic_id)
@@ -148,9 +166,10 @@ def scrape_from_ao3(fic_id):
 ## Write metadata to csv
 # In a folder called Data with a file called data_csv.csv
 def csv_writer_ao3(meta_dict):
+    global pwd
     if not meta_dict:
         return
-    global pwd
+    
     folder_name="Data"
     file_name="data_csv.csv"
     dir_path=pwd+"\\"+folder_name
@@ -162,6 +181,10 @@ def csv_writer_ao3(meta_dict):
         os.makedirs(dir_path)
     
     file_exists=os.path.exists(file_path)
+    
+    #meta_dict['date']=date
+    
+    
     
     with open(file_path,"a") as data_f:
         print("writing to file")

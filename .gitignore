@@ -1,2 +1,3 @@
-DoNotCommit\
 DoNotCommit
+Data/
+!Data/data_csv.csv

@@ -62,8 +62,13 @@ def read_csv():
     
     print(file_path)
     if not os.path.exists(file_path):
-        print("File does not exist at ",file_path," exiting")
-        return
+        print("File does not exist at ",file_path," creating blank file")
+        
+        #create a blank file
+            #categories of info we want
+        meta_dict=ao3.create_blank_dict() #create a blank dict
+        ao3.csv_writer_ao3(meta_dict)
+        
     
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file,delimiter=",")
@@ -82,7 +87,7 @@ def write_csv(data):
 data = read_csv()
 
 #initilaise some things
-total_words=sum([int(ent["words"].replace(',','')) for ent in data])
+total_words=None
 total_words_label=None
 add_row_button=None
 search_res=None
@@ -96,10 +101,12 @@ search_res=None
 
 # Build the NiceGUI interface
 def update_table():
-    table.rows.clear()
+    log_table.rows.clear()
     for row in data: #only reading data here
+        #print(row)
         if row["title"]: #only if there's a title field
-            table.add_row(row)
+            #print(row['date_fin'])
+            log_table.add_row(row)
     
     
 
@@ -108,11 +115,13 @@ def refresh_table():
     update_textbox()
     global data, total_words
     data=read_csv()
-    total_words=sum([int(ent["words"].replace(',','')) for ent in data])
     update_table()
+    if len(data)>1: #only do this if there's something in it
+        recalculate_stats()
+    
 
 def clear_table():
-    table.rows.clear()
+    log_table.rows.clear()
 
 
 def perform_search():
@@ -128,12 +137,18 @@ def perform_search():
     #search_res = ao3.scrape_from_ao3(fic_id)
     #print(search_res)
     update_textbox()
+    #date_field.value=search_res["date_fin"]
     author_input.value = search_res["author"]
     title_input.value = search_res["title"]
     wordcount_input.value = search_res["words"]
     fandom_input.value = search_res["fandom"]
     rating_input.value = search_res["rating"]
     url_input.value=search_res["url"]
+
+def set_date_field():
+    global search_res
+    search_res['date_fin']=date_field.value
+    print(search_res['date_fin'])
     
 def add_new_row():
     # new_row = {
@@ -149,6 +164,7 @@ def add_new_row():
     global data 
     if search_res:
         #data.append(search_res)
+        set_date_field()
         ao3.csv_writer_ao3(search_res)
         #...also need to add in the if there's manual stuff.....
         #table.add_row(search_res)
@@ -157,6 +173,8 @@ def add_new_row():
         
         refresh_table()
         add_row_button.text="Added"
+        print(search_res)
+        update_textbox()
     else:
         print("nothing to add")
         update_textbox()
@@ -170,25 +188,44 @@ def clear_input_fields():
     wordcount_input.value=fandom_input.value= rating_input.value =url_input.value=""
 
 columns=[
-    {"name": "title", "label": "Title", "field": "title"},
-    {"name": "author", "label": "Author", "field": "author"},
-    {"name": "words", "label": "Words", "field": "words"},
-    {"name": "published", "label": "Published", "field": "published"},
-    {"name": "chapters", "label": "Chapters", "field": "chapters"},
-    {"name": "fandom", "label": "Fandom", "field": "fandom"},
-    {"name": "url", "label": "URL", "field": "url"},
+    {"name": "date_fin", "label": "Date", "field": "date_fin"},
+    #{"name": "status", "label": "Status", "field": "status"},
+    {"name": "title", "label": "Title", "field": "title","style":"max-width: 15%; white-space: nowrap; overflow-wrap: normal; text-overflow: ellipsis;"},
+    {"name": "author", "label": "Author", "field": "author","style":"max-width:15%"},
+    {"name": "words", "label": "Words", "field": "words","style":"max-width:15%"},
+    {"name": "published", "label": "Published", "field": "published","style":"max-width:15%"},
+    {"name": "chapters", "label": "Chapters", "field": "chapters","style":"max-width:15%"},
+    {"name": "fandom", "label": "Fandom", "field": "fandom","style":"max-width:15%,text-overflow: ellipsis"},
+    {"name": "url", "label": "URL", "field": "url","style":"max-width:15%"},
 ]
 
 # actually building the stuff now
 
 with ui.column():
+    ui.label('Will add date started and finished. MANUAL ADD DOES NOT WORK YET. Date can be added to the csv file but will not show in table. I do not know why')
     with ui.row():
-        #fic_id_input = ui.input(label="Search",validation=lambda value: 'Too short' if len(value) < 2 else None).props('clearable')
-        fic_id_input = ui.input(label="AO3 Work ID").props('clearable')
-        search_res={}
-
-        ui.button("Search", on_click=perform_search).tooltip('The number part after /works/[NUMBER]')
-        ui.label('Will add date started and finished. MANUAL ADD DOES NOT WORK YET')
+        with ui.column():
+            #fic_id_input = ui.input(label="Search",validation=lambda value: 'Too short' if len(value) < 2 else None).props('clearable')
+            fic_id_input = ui.input(label="AO3 Work ID").props('clearable')
+            search_res={}
+    
+            ui.button("Search", on_click=perform_search).tooltip('The number part after /works/[NUMBER]')
+            
+    
+        #taken wholesale from the nicegui demo until i figure out wtf is going on
+        date_field=ui.input('Date').on('change',set_date_field)
+        with date_field as date:
+            with ui.menu().props('no-parent-event') as menu:
+                with ui.date().bind_value(date).on('change',set_date_field):
+                    with ui.row().classes('justify-end'):
+                        ui.button('Close').on('click',menu.close).props('flat')
+                    
+            with date.add_slot('append'):
+                ui.icon('edit_calendar').on('click', menu.open).classes('cursor-pointer')
+        
+        
+                   
+        
 
     
     with ui.row():
@@ -204,23 +241,29 @@ with ui.column():
 
 with ui.row():
 #    with ui.card().style(f'width: {fixed_container_width}; height: {fixed_container_height}; overflow: auto;'):
-    table = ui.table(
+    log_table = ui.table(
         columns=columns,
         rows=data,
         row_key="title",
-        pagination=5
-    )
+        pagination=5,
+        column_defaults={
+            'align': 'left',
+            'max-width': '15%', 
+            }
+    ).props('virtual-scroll')
+    log_table.style("width: 1000px; height: 350px; overflow: auto; overflow-wrap: auto")
 
 def recalculate_stats():    
     global total_words
-    total_words=sum([int(ent["words"].replace(',','')) for ent in data])
+    if len(data)>1:
+        total_words=sum([int(ent["words"].replace(',','')) for ent in data])
     total_words_label.text = f"Total words: {total_words}" 
     print("recalculating stats")
     update_textbox()
     
 with ui.row():
     ui.button("Refresh Table", on_click=refresh_table)
-    ui.button("Clear Table (BE SURE)",on_click=clear_table)
+    ui.button("Clear Table (not working)",on_click=clear_table)
     ui.button("Recalculate Stats", on_click=recalculate_stats)
 
 
@@ -267,5 +310,5 @@ with ui.row():
         ui.button("Clear Output", on_click=lambda: (stdout_capture.truncate(0), stdout_capture.seek(0), update_textbox()))
 
 
-#ui.run()
-ui.run(on_air=True)
+ui.run()
+#ui.run(on_air=True)
