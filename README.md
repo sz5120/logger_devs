@@ -1,3 +1,12 @@
+# EXCITING NEWS:
+
+This should now be able to run without installing python. You should **only** need the .exe file found in the \dist folder, but just in case, you may need the \dist and \build folders. 
+
+Please consider this a 'proof of concept' at this point. Background files will be saved as temporary files however (I believe), so export your csv each time. Eventually, you will be able to select a folder to save background files.
+
+Running it via python (see below) will still create a Data folder in the same directory it's run in, and also a src.json in the same directory.
+
+
 "# logger_dev" 
 INCREDIBLY BUGGY
 currently you can search a work ID, hit 'add row' which will write it to a csv in a folder called 'data', and include a date to add with it.
