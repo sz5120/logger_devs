@@ -1,4 +1,4 @@
-# EXCITING NEWS:
+## EXCITING NEWS:
 
 This should now be able to run without installing python. You should **only** need the .exe file found in the \dist folder, but just in case, you may need the \dist and \build folders. 
 
@@ -6,6 +6,8 @@ Please consider this a 'proof of concept' at this point. Background files will b
 
 Running it via python (see below) will still create a Data folder in the same directory it's run in, and also a src.json in the same directory.
 
+
+### Running via python:
 
 "# logger_dev" 
 INCREDIBLY BUGGY
