@@ -215,3 +215,8 @@ scrape_from_ao3(fic_id)
 '''
 
 # for testing purposes, we'll save the 
+
+
+#note, ao3downloader has some nice stuff on user authentication
+# https://github.com/nianeyna/ao3downloader
+# i downloaded it and put it in the Projects folder

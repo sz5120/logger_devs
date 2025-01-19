@@ -107,7 +107,7 @@ def update_table():
         if row["title"]: #only if there's a title field
             #print(row['date_fin'])
             log_table.add_row(row)
-    
+    log_table.update()
     
 
 def refresh_table():
@@ -119,9 +119,11 @@ def refresh_table():
     if len(data)>0: #only do this if there's something in it
         recalculate_stats()
     
+    
 
 def clear_table():
     log_table.rows.clear()
+    log_table.update()
 
 
 def perform_search():
