@@ -1,3 +1,11 @@
-DoNotCommit
-Data/
+#block most of this
+/*
+
+#do not block
 !Data/data_csv.csv
+!.gitignore
+!README.md
+!src.json
+!helpers
+!ao3_logger.py
+!log_gui.py

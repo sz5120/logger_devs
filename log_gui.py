@@ -5,7 +5,9 @@ import csv
 import ao3_logger as ao3
 from io import StringIO
 import sys
+import pandas as pd
 #need environment 310, and cd /d D:\Git_sz5120\Logger_Dev0
+import requests
 
 ##########################
 
@@ -42,7 +44,7 @@ def example_function():
 
 pwd = os.path.abspath(os.path.dirname(__file__))
 #pwd = os.path.abspath(os.path.dirname('__file__')) #for testing in console
-CSV_FILE = "data_csv.csv"
+OUTPUT_FILE = "export_csv.csv"
 '''
 # Ensure the CSV file exists
 if not os.path.exists(CSV_FILE):
@@ -52,10 +54,11 @@ if not os.path.exists(CSV_FILE):
 '''
 # Function to read data from the CSV file
 
+#changed it ot read from a dataframe instead
 def read_csv():
     global pwd
     folder_name="Data"
-    file_name="data_csv.csv"
+    file_name="df_csv.csv"
     
     dir_path=pwd+"\\"+folder_name
     file_path=dir_path+"\\"+file_name
@@ -63,17 +66,21 @@ def read_csv():
     print(file_path)
     if not os.path.exists(file_path):
         print("File does not exist at ",file_path," creating blank file")
-        
         #create a blank file
             #categories of info we want
-        meta_dict=ao3.create_blank_dict() #create a blank dict
-        ao3.csv_writer_ao3(meta_dict)
+        meta_df=ao3.create_blank_df() #create a blank dict
+        ao3.csv_writer_ao3(meta_df)
         
-    
+    data_df=pd.read_csv(file_path)
+    #data_df=data_df.astype({'chapters':'string','start_date':'datetime64[ns]','end_date':'datetime64[ns]'})
+    data_df=data_df.astype({'chapters':'string'})
+    return data_df
+    '''
     with open(file_path, mode="r") as file:
         reader = csv.DictReader(file,delimiter=",")
         print("found file, opening")    
         return [row for row in reader if any(row.values())]
+'''
 '''
 # Function to write data to the CSV file
 def write_csv(data):
@@ -84,37 +91,41 @@ def write_csv(data):
 '''
 # Read initial data
 
-data = read_csv()
-
+data_df = read_csv()
+data=data_df.to_dict('records')
 #initilaise some things
 total_words=None
 total_words_label=None
 add_row_button=None
 search_res=None
-
+headers = {'user-agent': 'fic_logger +sz5120@github.com'}
+user_session=requests.Session() 
 # Sample function to autopopulate fields based on search
 
 #for the search/input fields, we have
 # ao3_logger.scrape_from_ao3(fic_id) and ao3_logger.csv_writer_ao3(meta_dict)
 # if we already have the source scraped, we can also do: get_meta_info(fic_id,soup)
-
-
 # Build the NiceGUI interface
 def update_table():
     log_table.rows.clear()
     for row in data: #only reading data here
         #print(row)
         if row["title"]: #only if there's a title field
-            #print(row['date_fin'])
+            #print(row['author'])
             log_table.add_row(row)
-    
-    
-
+    log_table.update()
+    '''
+def update_table():
+    log_table.rows.clear()
+    log_table.from_pandas(data_df)
+    log_table.update()
+'''
 def refresh_table():
     print("refreshing table")
     update_textbox()
     global data, total_words
-    data=read_csv()
+    data_df=read_csv()
+    data=data_df.to_dict('records')
     update_table()
     if len(data)>0: #only do this if there's something in it
         recalculate_stats()
@@ -122,6 +133,7 @@ def refresh_table():
 
 def clear_table():
     log_table.rows.clear()
+    log_table.update()
 
 
 def perform_search():
@@ -132,23 +144,28 @@ def perform_search():
     reset_add_button()
     print("clearing input fields")
     update_textbox()
-    clear_input_fields()
-    search_res = ao3.scrape_from_ao3(fic_id_input.value)
+    #clear_input_fields()
+    search_res = ao3.scrape_from_ao3(fic_id_input.value,user_session)
+    print(search_res,search_res.info)
+    #print(search_res['author'])
     #search_res = ao3.scrape_from_ao3(fic_id)
     #print(search_res)
     update_textbox()
-    #date_field.value=search_res["date_fin"]
-    author_input.value = search_res["author"]
-    title_input.value = search_res["title"]
-    wordcount_input.value = search_res["words"]
-    fandom_input.value = search_res["fandom"]
-    rating_input.value = search_res["rating"]
-    url_input.value=search_res["url"]
+    
+    #search_output=search_res.to_dict('records')[0]
+    
+    author_input.value =[x for x in search_res.iloc[0]['author']]
+    #title_input.value = search_output["title"]
+    #wordcount_input.value = search_res["words"]
+    #fandom_input.value = search_res["fandom"]
+    #relationship_input.value = search_res["relationship"]
+    #rating_input.value = search_res["rating"]
+    #url_input.value=search_res["url"]
 
 def set_date_field():
     global search_res
-    search_res['date_fin']=date_field.value
-    print(search_res['date_fin'])
+    search_res['end_date']=date_field.value
+    #print(search_res['date_fin'])
     
 def add_new_row():
     # new_row = {
@@ -161,25 +178,32 @@ def add_new_row():
     #     "words": wordcount_input.value,
     # }
     global search_res
-    global data 
-    if search_res:
-        #data.append(search_res)
-        set_date_field()
-        ao3.csv_writer_ao3(search_res)
-        #...also need to add in the if there's manual stuff.....
-        #table.add_row(search_res)
-        #author_input.value = title_input.value = wordcount_input.value = ""
-        #wordcount_input.value=fandom_input.value= rating_input.value =url_input.value=""
-        
-        refresh_table()
-        add_row_button.text="Added"
-        print(search_res)
-        update_textbox()
+    global data_df 
+    #if search_res.any():
+    print("adding row")
+    #data.append(search_res)
+    set_date_field()
+    data_df=pd.concat([data_df,search_res],ignore_index=True)
+    data_df=data_df.astype({'chapters':'string','start_date':'datetime64[ns]','end_date':'datetime64[ns]'})
+    if len(data_df)==1:
+        ao3.csv_writer_ao3(data_df)
+    else:
+        ao3.csv_writer_ao3(data_df.tail(1))
+    #...also need to add in the if there's manual stuff.....
+    #table.add_row(search_res)
+    #author_input.value = title_input.value = wordcount_input.value = ""
+    #wordcount_input.value=fandom_input.value= rating_input.value =url_input.value=""
+    
+    refresh_table()
+    add_row_button.text="Added"
+    print(search_res)
+    update_textbox()
+    '''
     else:
         print("nothing to add")
         update_textbox()
 #append this new search to the csv only if we hit add here
-
+'''
 def reset_add_button():
     add_row_button.text = "Add Row"    
     
@@ -204,13 +228,30 @@ columns=[
     {"name": "published", "label": "Published", "field": "published","style":"max-width:15%"},
     {"name": "chapters", "label": "Chapters", "field": "chapters","style":"max-width:15%"},
     {"name": "fandom", "label": "Fandom", "field": "fandom","style":"max-width:15%,text-overflow: ellipsis"},
+    {"name": "relationship", "label": "Pairing", "field": "relationship","style":"max-width:15%,text-overflow: ellipsis"},
     {"name": "url", "label": "URL", "field": "url","style":"max-width:15%"},
 ]
 
 # actually building the stuff now
 
+def refresh_session():
+    global user_session
+    user_session=requests.Session() 
+    
+def get_login_info():
+    username=un_input.value
+    password=pw_input.value
+    print("help",username,password)
+    update_textbox()
+    
+def dummy_search():
+    print("pressed a button")
+        
 with ui.column():
-    ui.label('Will add date started and finished. MANUAL ADD DOES NOT WORK YET. Date can be added to the csv file but will not show in table. I do not know why')
+    ui.label('Will add date started and finished. \n MANUAL ADD DOES NOT WORK YET. \n \
+If entries are not showing up, go to last page. Log in works, however fetching fics is spotty.\n \
+Also the search results are no longer showing up in the fields but they can still be added').style('white-space: pre-wrap')
+    
     with ui.row():
         with ui.column():
             #fic_id_input = ui.input(label="Search",validation=lambda value: 'Too short' if len(value) < 2 else None).props('clearable')
@@ -231,20 +272,26 @@ with ui.column():
             with date.add_slot('append'):
                 ui.icon('edit_calendar').on('click', menu.open).classes('cursor-pointer')
         
+        with ui.column():
+            un_input=ui.input(label="Username")
+            pw_input=ui.input(label="Password")
+            ui.button("Submit", on_click= get_login_info)
+            ui.button("Refresh session", on_click=lambda: refresh_session())
+            
+        with ui.column():
+            ui.button("Log in",on_click=lambda: ao3.login_here(un_input.value,pw_input.value,user_session))
         
-                   
-        
-
     
     with ui.row():
         author_input = ui.input(label="Author").props('clearable').on('input', reset_add_button)
         title_input = ui.input(label="Title (Req.)").props('clearable').on('input', reset_add_button)
         wordcount_input = ui.input(label="Word Count").props('clearable').on('input', reset_add_button)
         fandom_input = ui.input(label="Fandom").props('clearable').on('input', reset_add_button)
+        relationship_input = ui.input(label="Pairing").props('clearable').on('input', reset_add_button)
         rating_input =ui.input(label="Rating").props('clearable').on('input', reset_add_button)
         url_input=ui.input(label="URL").props('clearable').on('input', reset_add_button)
 
-        add_row_button=ui.button("Add Row", on_click=add_new_row)
+        add_row_button=ui.button("Add Row", on_click=lambda:add_new_row())
         #ui.button('Clear', on_click=data_fields_container.clear)
 
 with ui.row():
@@ -262,9 +309,9 @@ with ui.row():
     log_table.style("width: 1000px; height: 350px; overflow: auto; overflow-wrap: auto")
 
 with ui.row():
-    ui.button("Refresh Table", on_click=refresh_table)
-    ui.button("Clear Table (not working)",on_click=clear_table)
-    ui.button("Recalculate Stats", on_click=recalculate_stats)
+    ui.button("Refresh Table", on_click=lambda:refresh_table())
+    ui.button("Clear Table (maybe)",on_click=lambda:clear_table())
+    ui.button("Recalculate Stats", on_click=lambda:recalculate_stats())
 
 
 with ui.row():
