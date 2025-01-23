@@ -155,12 +155,12 @@ def perform_search():
     #search_output=search_res.to_dict('records')[0]
     
     author_input.value =[x for x in search_res.iloc[0]['author']]
-    #title_input.value = search_output["title"]
-    #wordcount_input.value = search_res["words"]
-    #fandom_input.value = search_res["fandom"]
-    #relationship_input.value = search_res["relationship"]
-    #rating_input.value = search_res["rating"]
-    #url_input.value=search_res["url"]
+    title_input.value = search_res.iloc[0]['title']
+    wordcount_input.value = search_res.iloc[0]['words']
+    fandom_input.value = [x for x in search_res.iloc[0]['fandom']]
+    relationship_input.value = [x for x in search_res.iloc[0]["relationship"]]
+    rating_input.value = search_res.iloc[0]["rating"]
+    url_input.value=search_res.iloc[0]["url"]
 
 def set_date_field():
     global search_res

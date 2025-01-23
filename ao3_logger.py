@@ -42,6 +42,11 @@ else:
 headers = {'user-agent': 'fic_logger +sz5120@github.com'}
 #user_session=requests.Session() 
 
+
+def error_dump_file(error_content):
+    with open("error_log.txt","w") as f:
+        f.write(error_content)
+
 def login_here(username,password,curr_session):
     print("logging in")
     req=curr_session.get(strings.AO3_LOGIN_URL,headers=headers)
@@ -89,7 +94,7 @@ def scrape_from_ao3(fic_id,curr_session):
     print("meta info retrieved")
     
     #except now we actually want to add this to a dataframe
-    
+    #return meta_dict
     return meta_df
 
 
@@ -110,6 +115,7 @@ def get_soup_ao3(fic_id,curr_session):
     
     if req.status_code>=400:
         print("Error scraping fic_id:", fic_id, " and now exiting,", req.status_code)
+        error_dump_file(src,'html.parser')
         return None
     if (access_denied(BeautifulSoup(src, 'html.parser'))):
         print('Access Denied')
