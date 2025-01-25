@@ -10,3 +10,6 @@
 !helpers/strings.py
 !ao3_logger.py
 !log_gui.py
+helpers/__pycache__/login.cpython-310.pyc
+*.pyc
+*.pyc

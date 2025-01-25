@@ -105,7 +105,24 @@ user_session=requests.Session()
 #for the search/input fields, we have
 # ao3_logger.scrape_from_ao3(fic_id) and ao3_logger.csv_writer_ao3(meta_dict)
 # if we already have the source scraped, we can also do: get_meta_info(fic_id,soup)
-# Build the NiceGUI interface
+
+
+### COLUMN DEFINITIONS (consider doing this outside?)   
+columns=[
+    {"name": "date_fin", "label": "Date", "field": "date_fin"},
+    #{"name": "status", "label": "Status", "field": "status"},
+    {"name": "title", "label": "Title", "field": "title","style":"max-width: 15%; white-space: nowrap; overflow-wrap: normal; text-overflow: ellipsis;"},
+    {"name": "author", "label": "Author", "field": "author","style":"max-width:15%"},
+    {"name": "words", "label": "Words", "field": "words","style":"max-width:15%"},
+    {"name": "published", "label": "Published", "field": "published","style":"max-width:15%"},
+    {"name": "chapters", "label": "Chapters", "field": "chapters","style":"max-width:15%"},
+    {"name": "fandom", "label": "Fandom", "field": "fandom","style":"max-width:15%,text-overflow: ellipsis"},
+    {"name": "relationship", "label": "Pairing", "field": "relationship","style":"max-width:15%,text-overflow: ellipsis"},
+    {"name": "url", "label": "URL", "field": "url","style":"max-width:15%"},
+]
+
+
+###### DISPLAYING DATA IN THE TABLE (will be changed to aggrid)
 def update_table():
     log_table.rows.clear()
     for row in data: #only reading data here
@@ -136,6 +153,8 @@ def clear_table():
     log_table.update()
 
 
+#### SEARCH ON AO3 AND OTHER
+
 def perform_search():
     # this will call fic_logger search_from_ID
     global search_res
@@ -144,7 +163,7 @@ def perform_search():
     reset_add_button()
     print("clearing input fields")
     update_textbox()
-    #clear_input_fields()
+    clear_input_fields()
     search_res = ao3.scrape_from_ao3(fic_id_input.value,user_session)
     print(search_res,search_res.info)
     #print(search_res['author'])
@@ -164,9 +183,11 @@ def perform_search():
 
 def set_date_field():
     global search_res
-    search_res['end_date']=date_field.value
+    #search_res['end_date']=date_field.value
     #print(search_res['date_fin'])
     
+    
+#### ADD NEW ROW (also will be changed)    
 def add_new_row():
     # new_row = {
     #     "author": author_input.value,
@@ -211,6 +232,11 @@ def clear_input_fields():
     author_input.value = title_input.value = wordcount_input.value = ""
     wordcount_input.value=fandom_input.value= rating_input.value =url_input.value=""
 
+
+
+#### STATS WILL INCLUDE THINGS LIKE PAIRINGS ETC
+
+
 def recalculate_stats():    
     global total_words
     if len(data)>0:
@@ -218,19 +244,9 @@ def recalculate_stats():
     total_words_label.text = f"Total words: {total_words}" 
     print("recalculating stats")
     update_textbox()
+   
     
-columns=[
-    {"name": "date_fin", "label": "Date", "field": "date_fin"},
-    #{"name": "status", "label": "Status", "field": "status"},
-    {"name": "title", "label": "Title", "field": "title","style":"max-width: 15%; white-space: nowrap; overflow-wrap: normal; text-overflow: ellipsis;"},
-    {"name": "author", "label": "Author", "field": "author","style":"max-width:15%"},
-    {"name": "words", "label": "Words", "field": "words","style":"max-width:15%"},
-    {"name": "published", "label": "Published", "field": "published","style":"max-width:15%"},
-    {"name": "chapters", "label": "Chapters", "field": "chapters","style":"max-width:15%"},
-    {"name": "fandom", "label": "Fandom", "field": "fandom","style":"max-width:15%,text-overflow: ellipsis"},
-    {"name": "relationship", "label": "Pairing", "field": "relationship","style":"max-width:15%,text-overflow: ellipsis"},
-    {"name": "url", "label": "URL", "field": "url","style":"max-width:15%"},
-]
+
 
 # actually building the stuff now
 
@@ -238,15 +254,40 @@ def refresh_session():
     global user_session
     user_session=requests.Session() 
     
+    
+    
+#### LOGIN INFO    
+    
 def get_login_info():
     username=un_input.value
     password=pw_input.value
     print("help",username,password)
     update_textbox()
+
+
     
 def dummy_search():
     print("pressed a button")
+    
+    
+#### EXPORTING FILSE
+
+
+def export_csv():
+    with open('export_data.csv',"w") as data_f:
+        print("writing to file")
+        update_textbox()
+        data_w=csv.DictWriter(data_f,data[0].keys())
+        data_w.writeheader()
+        for row in data:
+            data_w.writerow(row)    
+    ui.download('export_data.csv')
+
+
+#### UI CREATION
         
+
+## Search, log-in, and inputs
 with ui.column():
     ui.label('Will add date started and finished. \n MANUAL ADD DOES NOT WORK YET. \n \
 If entries are not showing up, go to last page. Log in works, however fetching fics is spotty.\n \
@@ -275,11 +316,11 @@ Also the search results are no longer showing up in the fields but they can stil
         with ui.column():
             un_input=ui.input(label="Username")
             pw_input=ui.input(label="Password")
-            ui.button("Submit", on_click= get_login_info)
-            ui.button("Refresh session", on_click=lambda: refresh_session())
+            #ui.button("Submit", on_click= get_login_info)
             
         with ui.column():
             ui.button("Log in",on_click=lambda: ao3.login_here(un_input.value,pw_input.value,user_session))
+            ui.button("Refresh session", on_click=lambda: refresh_session())
         
     
     with ui.row():
@@ -293,6 +334,8 @@ Also the search results are no longer showing up in the fields but they can stil
 
         add_row_button=ui.button("Add Row", on_click=lambda:add_new_row())
         #ui.button('Clear', on_click=data_fields_container.clear)
+
+## table display
 
 with ui.row():
 #    with ui.card().style(f'width: {fixed_container_width}; height: {fixed_container_height}; overflow: auto;'):
@@ -319,17 +362,7 @@ with ui.row():
     #ui.label("total words: "+ str(total_words))
     
 
-
-
-def export_csv():
-    with open('export_data.csv',"w") as data_f:
-        print("writing to file")
-        update_textbox()
-        data_w=csv.DictWriter(data_f,data[0].keys())
-        data_w.writeheader()
-        for row in data:
-            data_w.writerow(row)    
-    ui.download('export_data.csv')
+## export button
 
 ui.button('Export to CSV', on_click=export_csv)
 
@@ -338,7 +371,8 @@ ui.button('Export to CSV', on_click=export_csv)
 # Redirect stdout
 #redirect_stdout()
 
-# Layout for the UI
+
+# Debugging window
 with ui.row():
     with ui.column():
         ui.label("Redirect standard output to this textbox if you want to keep an eye on error debugging messages.")
@@ -349,13 +383,13 @@ with ui.row():
         std_out_status_label=ui.label("Current status: Printing to console")
     with ui.column():
         # Button to trigger example function
-        ui.button("Update", on_click=update_textbox)
-        ui.button("Redirect stdout to here", on_click=redirect_stdout)
-        ui.button("Restore stdout to normal function", on_click=restore_stdout)
+        ui.button("Update", on_click=lambda: update_textbox())
+        ui.button("Redirect stdout to here", on_click= lambda: redirect_stdout())
+        ui.button("Restore stdout to normal function", on_click=lambda: restore_stdout())
     
         # Button to clear the stdout and the textbox
         ui.button("Clear Output", on_click=lambda: (stdout_capture.truncate(0), stdout_capture.seek(0), update_textbox()))
 
 
-ui.run()
+ui.run(native=True)
 #ui.run(on_air=True)

@@ -248,7 +248,7 @@ def csv_writer_ao3(df):
     #meta_dict['date']=date
     #if it exists, don't write, otherwise, write
     
-    df.to_csv(file_path, mode='a', index=False, header=write_header)
+    df.to_csv(file_path, mode='a', index=True, header=write_header)
     print("wrote to file")
     '''
     with open(file_path,"a") as data_f:
