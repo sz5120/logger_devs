@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from nicegui import app, events, ui
+from nicegui import app, run, events, ui
 import os
 import csv
 import ao3_logger as ao3
@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 #need environment 310, and cd /d D:\Git_sz5120\Logger_Dev0
 import requests
-import webview
+#import webview
 
 ##########################
 
@@ -61,26 +61,29 @@ async def choose_file():
 async def set_path():
 #window.create_file_dialog(dialog_type=OPEN_DIALOG, directory='', allow_multiple=False, save_filename='', file_types=())`
     global file_path
-    pwd=file_dir_label.value
-    ui.notify(pwd)
+    file_path=file_dir_label
+    #pwd=file_dir_label.value
+    ui.notify(file_path)
 
 
 
-
+app.native.settings['ALLOW_DOWNLOADS'] = True
 
 # this will create a default in a temporary folder
 
-pwd = os.path.abspath(os.path.dirname(__file__))
+#pwd = os.path.abspath(os.path.dirname(__file__))
 #pwd = os.path.abspath(os.path.dirname('__file__')) #for testing in console
 #OUTPUT_FILE = "export_csv.csv"
 
 
+#might need this for executable instead
+pwd=os.path.dirname(os.path.realpath(sys.argv[0]   ))
 
 folder_name="Data"
 file_name="df_csv.csv"
 
 dir_path=pwd+"\\"+folder_name
-file_path=dir_path+"\\"+file_name
+#file_path=dir_path+"\\"+file_name
 
 '''
 # Ensure the CSV file exists
@@ -92,15 +95,15 @@ if not os.path.exists(CSV_FILE):
 # Function to read data from the CSV file
 
 #changed it ot read from a dataframe instead
-def read_csv(file_path):
-    
-    
+def read_csv_fl(dir_path,file_name):
+    file_path=dir_path+"\\"+file_name   
+    print(pwd,file_path)
     if not os.path.exists(file_path):
         print("File does not exist at ",file_path," creating blank file")
         #create a blank file
             #categories of info we want
         meta_df=ao3.create_blank_df() #create a blank dict
-        ao3.csv_writer_ao3(meta_df)
+        ao3.csv_writer_ao3(meta_df,dir_path,file_name)
         
     data_df=pd.read_csv(file_path)
     #data_df=data_df.astype({'chapters':'string','start_date':'datetime64[ns]','end_date':'datetime64[ns]'})
@@ -122,8 +125,9 @@ def write_csv(data):
 '''
 # Read initial data
 
-data_df = read_csv(file_path)
+data_df = read_csv_fl(dir_path,file_name)
 data=data_df.to_dict('records')
+
 #initilaise some things
 total_words=None
 total_words_label=None
@@ -152,10 +156,19 @@ columns=[
     {"name": "url", "label": "URL", "field": "url","style":"max-width:15%"},
 ]
 
+'''
+#### start up call #can probably use this to ask user to do some selectiions first if needed
+def startup():
+    global data_df,data
+    data_df = read_csv_fl(dir_path,file_name)
+    data=data_df.to_dict('records')
+    refresh_table()
+    print("starting up")
+'''
 
 ###### DISPLAYING DATA IN THE TABLE (will be changed to aggrid)
 def update_table():
-    log_table.rows.clear()
+    if log_table.rows: log_table.rows.clear() 
     for row in data: #only reading data here
         #print(row)
         if row["title"]: #only if there's a title field
@@ -172,7 +185,7 @@ def refresh_table():
     print("refreshing table")
     update_textbox()
     global data, total_words
-    data_df=read_csv(file_path)
+    data_df=read_csv_fl(dir_path,file_name)
     data=data_df.to_dict('records')
     update_table()
     if len(data)>0: #only do this if there's something in it
@@ -185,8 +198,9 @@ def clear_table():
 
 
 #### SEARCH ON AO3 AND OTHER
+#changed this to async, hopefully this iddn't break anything
 
-def perform_search():
+async def perform_search():
     # this will call fic_logger search_from_ID
     global search_res
     print("resetting button")
@@ -195,7 +209,8 @@ def perform_search():
     print("clearing input fields")
     update_textbox()
     clear_input_fields()
-    search_res = ao3.scrape_from_ao3(fic_id_input.value,user_session)
+    
+    search_res = await(ao3.scrape_from_ao3(fic_id_input.value,user_session)) #need to call it as an await
     print(search_res,search_res.info)
     #print(search_res['author'])
     #search_res = ao3.scrape_from_ao3(fic_id)
@@ -238,9 +253,9 @@ def add_new_row():
     data_df=pd.concat([data_df,search_res],ignore_index=True)
     data_df=data_df.astype({'chapters':'string','start_date':'datetime64[ns]','end_date':'datetime64[ns]'})
     if len(data_df)==1:
-        ao3.csv_writer_ao3(data_df)
+        ao3.csv_writer_ao3(data_df,dir_path,file_name)
     else:
-        ao3.csv_writer_ao3(data_df.tail(1))
+        ao3.csv_writer_ao3(data_df.tail(1),dir_path,file_name)
     #...also need to add in the if there's manual stuff.....
     #table.add_row(search_res)
     #author_input.value = title_input.value = wordcount_input.value = ""
@@ -316,7 +331,7 @@ def export_csv():
 
 
 #### UI CREATION
-        
+
 
 ## Search, log-in, and inputs
 with ui.column():
@@ -426,6 +441,7 @@ with ui.row():
         # Button to clear the stdout and the textbox
         ui.button("Clear Output", on_click=lambda: (stdout_capture.truncate(0), stdout_capture.seek(0), update_textbox()))
 
-
-ui.run(native=True)
+#app.on_startup()
+ui.run(native=True,reload=True)
+#ui.run(native=True,reload=False)
 #ui.run(on_air=True)

@@ -17,14 +17,15 @@ import warnings
 import pandas as pd
 from helpers import strings
 from helpers import login
+from nicegui import run
 warnings.simplefilter('ignore')
 
 
 # so we're not constantly scraping this for now
 
-pwd = os.path.abspath(os.path.dirname(__file__)) #for running as file
+#pwd = os.path.abspath(os.path.dirname(__file__)) #for running as file
 #pwd = os.path.abspath(os.path.dirname('__file__')) #for testing in console
-
+pwd=os.path.dirname(os.path.realpath(sys.argv[0]))
 #ill eventually get this as an input
 
 json_file="src.json"
@@ -69,14 +70,14 @@ def login_here(username,password,curr_session):
         #logged_in_lable.text="Logged in"
 
 #returns a dataframe
-def scrape_from_ao3(fic_id,curr_session):
+async def scrape_from_ao3(fic_id,curr_session):
     print('Scraping:', fic_id)
     global src_dict
     if str(fic_id) in src_dict:
         src=src_dict[str(fic_id)]
         print("already scraped, moving on")
     else:
-        src=get_soup_ao3(fic_id,curr_session)
+        src=await(get_soup_ao3(fic_id,curr_session))
         
         if not src: return None
         
@@ -98,8 +99,8 @@ def scrape_from_ao3(fic_id,curr_session):
     return meta_df
 
 
-
-def get_soup_ao3(fic_id,curr_session):
+#trying ot put await async here
+async def get_soup_ao3(fic_id,curr_session):
     global src_dict
     url = 'http://archiveofourown.org/works/'+str(fic_id)+'?view_adult=true'
     print("from url:",url)
@@ -108,7 +109,8 @@ def get_soup_ao3(fic_id,curr_session):
     #header_info=''
     #headers=header_info   
     #print(headers)
-    req = curr_session.get(url, headers=headers)
+    req = await run.io_bound(curr_session.get,url, headers=headers,timeout=30)
+    #req = curr_session.get(url, headers=headers)
     print("status code:",req.status_code)
     src=req.text
     
@@ -140,7 +142,7 @@ def access_denied(soup):
 
 #taken from ao3 scraper
 def get_tag_info(category, meta):
-	'''
+	'''re
 	given a category and a 'work meta group, returns a list of tags (eg, 'rating' -> 'explicit')
 	'''
 	try:
@@ -226,20 +228,22 @@ def get_meta_info(fic_id,soup):
 
 ## Write metadata to csv
 # In a folder called Data with a file called data_csv.csv
-def csv_writer_ao3(df):
-    global pwd
-    if df.empty:
-        print("Nothing to write")
-        return False
-    folder_name="Data"
-    file_name="df_csv.csv"
-    dir_path=pwd+"\\"+folder_name
+def csv_writer_ao3(df,dir_path,file_name):
+    #global pwd
+    
+    #folder_name="Data"
+    #file_name="df_csv.csv"
+    #dir_path=pwd+"\\"+folder_name
     file_path=dir_path+"\\"+file_name     
     
     dir_exists=os.path.exists(dir_path)
     #check if directory exists
     if not dir_exists:
         os.makedirs(dir_path)
+
+#    if df.empty and os.path.exists(file_path):
+        #print("Nothing to write")
+        #return False
     
     
     #file_exists=os.path.exists(file_path)
