@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from nicegui import events, ui
+from nicegui import app, events, ui
 import os
 import csv
 import ao3_logger as ao3
@@ -8,6 +8,7 @@ import sys
 import pandas as pd
 #need environment 310, and cd /d D:\Git_sz5120\Logger_Dev0
 import requests
+import webview
 
 ##########################
 
@@ -42,9 +43,45 @@ def example_function():
 
 
 
+## FILE PICKER EXPERIMENT TIME
+
+
+
+async def choose_file():
+    #folder = await app.native.main_window.create_file_dialog(dialog_type=webview.FOLDER_DIALOG,allow_multiple=False)
+    file = await app.native.main_window.create_file_dialog(allow_multiple=False)
+    #for file in files:
+        #ui.notify(file)
+    #    print(file)
+    #ui.notify(folder)
+    print(file)
+    file_dir_label.value=file[0]
+    
+        
+async def set_path():
+#window.create_file_dialog(dialog_type=OPEN_DIALOG, directory='', allow_multiple=False, save_filename='', file_types=())`
+    global file_path
+    pwd=file_dir_label.value
+    ui.notify(pwd)
+
+
+
+
+
+# this will create a default in a temporary folder
+
 pwd = os.path.abspath(os.path.dirname(__file__))
 #pwd = os.path.abspath(os.path.dirname('__file__')) #for testing in console
-OUTPUT_FILE = "export_csv.csv"
+#OUTPUT_FILE = "export_csv.csv"
+
+
+
+folder_name="Data"
+file_name="df_csv.csv"
+
+dir_path=pwd+"\\"+folder_name
+file_path=dir_path+"\\"+file_name
+
 '''
 # Ensure the CSV file exists
 if not os.path.exists(CSV_FILE):
@@ -55,15 +92,9 @@ if not os.path.exists(CSV_FILE):
 # Function to read data from the CSV file
 
 #changed it ot read from a dataframe instead
-def read_csv():
-    global pwd
-    folder_name="Data"
-    file_name="df_csv.csv"
+def read_csv(file_path):
     
-    dir_path=pwd+"\\"+folder_name
-    file_path=dir_path+"\\"+file_name
     
-    print(file_path)
     if not os.path.exists(file_path):
         print("File does not exist at ",file_path," creating blank file")
         #create a blank file
@@ -91,7 +122,7 @@ def write_csv(data):
 '''
 # Read initial data
 
-data_df = read_csv()
+data_df = read_csv(file_path)
 data=data_df.to_dict('records')
 #initilaise some things
 total_words=None
@@ -141,7 +172,7 @@ def refresh_table():
     print("refreshing table")
     update_textbox()
     global data, total_words
-    data_df=read_csv()
+    data_df=read_csv(file_path)
     data=data_df.to_dict('records')
     update_table()
     if len(data)>0: #only do this if there's something in it
@@ -322,6 +353,11 @@ Also the search results are no longer showing up in the fields but they can stil
             ui.button("Log in",on_click=lambda: ao3.login_here(un_input.value,pw_input.value,user_session))
             ui.button("Refresh session", on_click=lambda: refresh_session())
         
+        #set path directory
+        with ui.column():
+            file_dir_label=ui.input(label="Working_Directory")
+            ui.button('Choose Existing File', on_click=choose_file)
+            ui.button('confirm',on_click=set_path)
     
     with ui.row():
         author_input = ui.input(label="Author").props('clearable').on('input', reset_add_button)
