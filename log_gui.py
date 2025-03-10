@@ -328,12 +328,23 @@ def export_csv():
         for row in data:
             data_w.writerow(row)    
     ui.download('export_data.csv')
+    exit()
+    
+#need to add an async to this
+async def close_and_export():
+    await export_csv()
+    app.shutdown()
 
 
 #### UI CREATION
 
 
 ## Search, log-in, and inputs
+with ui.row():
+    ui.button('close', on_click=app.shutdown)
+    ui.button('close and save', on_click=lambda:close_and_export())
+
+
 with ui.column():
     ui.label('Will add date started and finished. \n MANUAL ADD DOES NOT WORK YET. \n \
 If entries are not showing up, go to last page. Log in works, however fetching fics is spotty.\n \

@@ -1,13 +1,17 @@
 #block most of this
-/*
+#/*
+Data/*
+DoNotCommit/*
+.vscode/*
+styles/*
+params.py
 
 #do not block
 !Data/data_csv.csv
 !.gitignore
 !README.md
 !src.json
-!helpers/login.py
-!helpers/strings.py
+!helpers
 !ao3_logger.py
 !log_gui.py
 helpers/__pycache__/login.cpython-310.pyc

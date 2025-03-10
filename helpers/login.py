@@ -8,10 +8,13 @@ Created on Mon Jan 20 12:14:34 2025
 import requests
 from bs4 import BeautifulSoup
 import re
+# from . import strings #deal with this later lmfao
 
 headers = {'user-agent': 'fic_logger +sz5120@github.com'}
 AO3_LOGIN_URL = 'https://archiveofourown.org/users/login'
-AO3_FAILED_LOGIN = 'The password or user name you entered doesn\'t match our records.'
+#AO3_FAILED_LOGIN = 'The password or user name you entered doesn\'t match our records.'
+AO3_FAILED_LOGIN="Please try again"
+AO3_FAILED_SESSION="session has expired"
 
 #soup=requests.get(AO3_LOGIN_URL,headers=headers)
 
@@ -41,6 +44,8 @@ def string_exists(soup: BeautifulSoup, string: str) -> bool:
 
 def is_failed_login(soup: BeautifulSoup) -> bool:
     return string_exists(soup, AO3_FAILED_LOGIN)
+def is_session_expired(soup: BeautifulSoup) -> bool:
+    return string_exists(soup,AO3_FAILED_SESSION)
 '''
 
 sess=requests.Session()
