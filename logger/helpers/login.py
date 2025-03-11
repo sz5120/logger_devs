@@ -46,6 +46,9 @@ def is_failed_login(soup: BeautifulSoup) -> bool:
     return string_exists(soup, AO3_FAILED_LOGIN)
 def is_session_expired(soup: BeautifulSoup) -> bool:
     return string_exists(soup,AO3_FAILED_SESSION)
+
+def dummy_func(n:int)-> list:
+    return [n,n+1,n+2]
 '''
 
 sess=requests.Session()

@@ -37,7 +37,7 @@ user_session=requests.Session()
 #endregion
 
 
-
+# region ### GUI ###
 
 @ui.page('/main')
 def main_page():
@@ -56,11 +56,11 @@ def main_page():
     # region ### APPLY FORMATTING ###
 
     ElementFilter(kind=ui.button).props('flat no-caps padding="5px" color="grey-10" style="size:15px; color: black; background:#700"')
-    #ElementFilter(kind=ui.input).props('outlined dense color="red-500" style="size:15px"')
+    ElementFilter(kind=ui.input).props('square outlined dense color="white" size=12')
 
     # endregion ### END FORMATTING###
 
-
+# endregion ### GUI ###
 main_page()
 ui.button("close",on_click=app.shutdown)
 

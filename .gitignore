@@ -1,19 +1,23 @@
 #block most of this
-#/*
-Data/*
-DoNotCommit/*
+logger/Data/*
+logger/DoNotCommit/*
 .vscode/*
-styles/*
-params.py
+logger/styles/*
+logger/params.py
 
 #do not block
-!Data/data_csv.csv
+!logger/Data/data_csv.csv
 !.gitignore
 !README.md
 !src.json
-!helpers
+!logger/helpers/*
+!logger/apps/*
+!logger/__init__.py
+!logger/ao3_functions.py
+!logger/main_gui.py
+
 !ao3_logger.py
 !log_gui.py
-helpers/__pycache__/login.cpython-310.pyc
+
 *.pyc
 *.pyc

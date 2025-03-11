@@ -60,6 +60,8 @@ def check_errors():
     else:
         print("Logged In")
 
+def dummy_func(n:int)->list:
+    return [n,n+1,n*2]
 #check_errors()
 #login_here(username,password,user_session)
 
